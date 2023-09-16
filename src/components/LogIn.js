@@ -1,10 +1,9 @@
-// src/components/Login.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './Login.css'; // Import custom CSS file for additional styles
+import './Login.css'; 
 
 const LogIn = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
@@ -12,20 +11,24 @@ const LogIn = () => {
   const handleLogin = () => {
     // Perform form validation
     const validationErrors = {};
-    if (!username) {
-      validationErrors.username = 'Username is required';
+    const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+
+    if (!email) {
+      validationErrors.email = 'Email is required';
+    } else if (!emailPattern.test(email)) {
+      validationErrors.email = 'Invalid email format';
     }
+
     if (!password) {
       validationErrors.password = 'Password is required';
+    } else if (password.length < 6) {
+      validationErrors.password = 'Password must be at least 6 characters long';
     }
 
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
     }
-
-    // Perform authentication (you can add your authentication logic here)
-    // For this example, we'll assume authentication is successful
     navigate('/home');
   };
 
@@ -38,16 +41,16 @@ const LogIn = () => {
               <h2 className="card-title text-center">Login</h2>
               <form>
                 <div className="form-group">
-                  <label htmlFor="username">Username</label>
+                  <label htmlFor="email">Email</label>
                   <input
-                    type="text"
-                    className={`form-control ${errors.username ? 'is-invalid' : ''}`}
-                    id="username"
-                    placeholder="Enter your username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    type="email"
+                    className={`form-control ${errors.email ? 'is-invalid' : ''}`}
+                    id="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                   />
-                  {errors.username && <div className="invalid-feedback">{errors.username}</div>}
+                  {errors.email && <div className="invalid-feedback">{errors.email}</div>}
                 </div>
                 <div className="form-group">
                   <label htmlFor="password">Password</label>

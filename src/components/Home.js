@@ -7,6 +7,8 @@ const Home = () => {
   const [newTask, setNewTask] = useState({ name: "", Description: "", isCompleted: false });
   const [editTaskId, setEditTaskId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  // Add a state to hold temporary edited data
+  const [editedData, setEditedData] = useState({ name: "", Description: "" });
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -33,7 +35,7 @@ const Home = () => {
   const handleAddTask = async () => {
     if (isEditing) {
       try {
-        await axios.put(`http://localhost:5000/todo?id=${editTaskId}`, newTask);
+        await axios.put(`http://localhost:5000/todo?id=${editTaskId}`, editedData);
         setIsEditing(false);
         fetchTasks();
       } catch (error) {
@@ -50,11 +52,16 @@ const Home = () => {
       }
     }
     setNewTask({ name: "", Description: "", isCompleted: false });
+    // Clear the editedData state as well
+    setEditedData({ name: "", Description: "" });
   };
 
   const handleEditTask = (taskId) => {
     setEditTaskId(taskId);
     setIsEditing(true);
+    // Set the editedData with the current task's data
+    const taskToEdit = tasks.find((task) => task.id === taskId);
+    setEditedData({ name: taskToEdit.name, Description: taskToEdit.Description });
   };
 
   const handleMarkAsCompleted = async (taskId) => {
@@ -75,6 +82,7 @@ const Home = () => {
     setIsEditing(false);
     setEditTaskId(null);
     setNewTask({ name: "", Description: "", isCompleted: false });
+    setEditedData({ name: "", Description: "" }); // Clear editedData
   };
 
   const handleDeleteTask = async (taskId) => {
@@ -89,6 +97,7 @@ const Home = () => {
 
   const handleUpdateTask = async (taskId, updatedData) => {
     try {
+      // Send the updated data to the backend
       await axios.put(`http://localhost:5000/todo?id=${taskId}`, updatedData);
       const updatedTasks = tasks.map((task) =>
         task.id === taskId ? { ...task, ...updatedData } : task
@@ -101,6 +110,7 @@ const Home = () => {
       console.error("Error updating task:", error);
     }
   };
+  
 
   return (
     <div className="container mt-4">
@@ -113,33 +123,50 @@ const Home = () => {
             rows="2"
             className="form-control mb-2"
             placeholder="name"
-            value={newTask.name}
-            onChange={(e) => setNewTask({ ...newTask, name: e.target.value })}
+            value={isEditing ? editedData.name : newTask.name}
+            onChange={(e) =>
+              isEditing
+                ? setEditedData({ ...editedData, name: e.target.value })
+                : setNewTask({ ...newTask, name: e.target.value })
+            }
           />
           <textarea
             rows="5"
             className="form-control mb-2"
             placeholder="Description"
-            value={newTask.Description}
+            value={isEditing ? editedData.Description : newTask.Description}
             onChange={(e) =>
-              setNewTask({ ...newTask, Description: e.target.value })
+              isEditing
+                ? setEditedData({ ...editedData, Description: e.target.value })
+                : setNewTask({ ...newTask, Description: e.target.value })
             }
           />
-          <button
-            className="btn btn-primary btn-sm"
-            onClick={handleAddTask}
-            style={{ minWidth: "100px" }}
-          >
-            {isEditing ? "Update Task" : "Add Task"}
-          </button>
-          {isEditing && (
+          {!isEditing && (
             <button
-              className="btn btn-danger btn-sm ml-2"
-              onClick={handleCancelEdit}
-              style={{ minWidth: "70px" }}
+              className="btn btn-primary btn-sm"
+              onClick={handleAddTask}
+              style={{ minWidth: "100px" }}
             >
-              Cancel
+              Add Task
             </button>
+          )}
+          {isEditing && (
+            <div>
+              <button
+                className="btn btn-success btn-sm"
+                onClick={() => handleUpdateTask(editTaskId, editedData)}
+                style={{ minWidth: "100px" }}
+              >
+                Update
+              </button>
+              <button
+                className="btn btn-danger btn-sm ml-2"
+                onClick={handleCancelEdit}
+                style={{ minWidth: "70px" }}
+              >
+                Cancel
+              </button>
+            </div>
           )}
         </div>
 
@@ -153,43 +180,30 @@ const Home = () => {
                   task.isCompleted ? "list-group-item-success" : ""
                 }`}
               >
-                {editTaskId === task.id ? (
+               
+               {editTaskId === task.id ? (
                   <div>
                     <textarea
                       rows="3"
                       className="form-control mb-2"
                       placeholder="name"
-                      value={newTask.name}
+                      value={editedData.name}
                       onChange={(e) =>
-                        setNewTask({ ...newTask, name: e.target.value })
+                        setEditedData({ ...editedData, name: e.target.value })
                       }
                     />
                     <textarea
                       rows="5"
                       className="form-control mb-2"
                       placeholder="Description"
-                      value={newTask.Description}
+                      value={editedData.Description}
                       onChange={(e) =>
-                        setNewTask({
-                          ...newTask,
+                        setEditedData({
+                          ...editedData,
                           Description: e.target.value,
                         })
                       }
                     />
-                    <button
-                      className="btn btn-success btn-sm"
-                      onClick={() => handleUpdateTask(editTaskId, newTask)}
-                      style={{ minWidth: "100px" }}
-                    >
-                      Save
-                    </button>
-                    <button
-                      className="btn btn-danger btn-sm ml-2"
-                      onClick={handleCancelEdit}
-                      style={{ minWidth: "70px" }}
-                    >
-                      Cancel
-                    </button>
                   </div>
                 ) : (
                   <div>
@@ -216,7 +230,7 @@ const Home = () => {
                           onClick={() => handleDeleteTask(task.id)}
                           style={{ width: "70px" }}
                         >
-                        Delete
+                          Delete
                         </button>
                       </div>
                     )}
