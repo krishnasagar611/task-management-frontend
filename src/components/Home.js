@@ -62,7 +62,6 @@ const Home = () => {
       }
     }
     setNewTask({ id: null, name: "", Description: "", isCompleted: false });
-    // Clear the editedData state as well
     setEditedData({ name: "", Description: "" });
   };
 
@@ -99,15 +98,12 @@ const Home = () => {
 
   const handleDeleteTask = async (taskId) => {
     try {
-      // Include the task ID in the request body
       const taskToDelete = { id: taskId };
 
-      // Send the task ID to the backend to delete the task
       await axios.delete(`http://localhost:5000/todo`, {
         data: taskToDelete,
       });
 
-      // Filter out the deleted task from the local tasks state
       const updatedTasks = tasks.filter((task) => task.id !== taskId);
       setTasks(updatedTasks);
     } catch (error) {
@@ -117,10 +113,7 @@ const Home = () => {
 
   const handleUpdateTask = async (taskId, updatedData) => {
     try {
-      // Include the task ID in the request body
       const updatedTaskData = { id: taskId, ...updatedData };
-
-      // Send the updated data to the backend in the request body
       await axios.put(`http://localhost:5000/todo`, updatedTaskData);
 
       const updatedTasks = tasks.map((task) =>
