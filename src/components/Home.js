@@ -4,17 +4,21 @@ import "./Home.css";
 
 const Home = () => {
   const [tasks, setTasks] = useState([]);
-  const [newTask, setNewTask] = useState({ name: "", Description: "", isCompleted: false });
+  const [newTask, setNewTask] = useState({
+    id: null,
+    name: "",
+    Description: "",
+    isCompleted: false,
+  });
   const [editTaskId, setEditTaskId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  // Add a state to hold temporary edited data
   const [editedData, setEditedData] = useState({ name: "", Description: "" });
 
   useEffect(() => {
     const fetchTasks = async () => {
       try {
         const response = await axios.get("http://localhost:5000/todos");
-        setTasks(response.data); // Update tasks state with the data from the API
+        setTasks(response.data);
       } catch (error) {
         console.error("Error fetching tasks:", error);
       }
@@ -35,7 +39,10 @@ const Home = () => {
   const handleAddTask = async () => {
     if (isEditing) {
       try {
-        await axios.put(`http://localhost:5000/todo?id=${editTaskId}`, editedData);
+        await axios.put(
+          `http://localhost:5000/todo?id=${editTaskId}`,
+          editedData
+        );
         setIsEditing(false);
         fetchTasks();
       } catch (error) {
@@ -44,14 +51,17 @@ const Home = () => {
     } else {
       if (newTask.name.trim() || newTask.Description.trim()) {
         try {
-          const response = await axios.post("http://localhost:5000/todo", newTask);
+          const response = await axios.post(
+            "http://localhost:5000/todo",
+            newTask
+          );
           setTasks([...tasks, response.data]);
         } catch (error) {
           console.error("Error adding task:", error);
         }
       }
     }
-    setNewTask({ name: "", Description: "", isCompleted: false });
+    setNewTask({ id: null, name: "", Description: "", isCompleted: false });
     // Clear the editedData state as well
     setEditedData({ name: "", Description: "" });
   };
@@ -59,16 +69,18 @@ const Home = () => {
   const handleEditTask = (taskId) => {
     setEditTaskId(taskId);
     setIsEditing(true);
-    // Set the editedData with the current task's data
     const taskToEdit = tasks.find((task) => task.id === taskId);
-    setEditedData({ name: taskToEdit.name, Description: taskToEdit.Description });
+    setEditedData({
+      name: taskToEdit.name,
+      Description: taskToEdit.Description,
+    });
   };
 
   const handleMarkAsCompleted = async (taskId) => {
     try {
-      await axios.put(`http://localhost:5000/todo?id=${taskId}`, {
-        isCompleted: true,
-      });
+      const taskToComplete = { id: taskId, isCompleted: true };
+      // Send the task data to the backend to mark it as completed
+      await axios.put(`http://localhost:5000/todo`, taskToComplete);
       const updatedTasks = tasks.map((task) =>
         task.id === taskId ? { ...task, isCompleted: true } : task
       );
@@ -81,13 +93,21 @@ const Home = () => {
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditTaskId(null);
-    setNewTask({ name: "", Description: "", isCompleted: false });
+    setNewTask({ id: null, name: "", Description: "", isCompleted: false });
     setEditedData({ name: "", Description: "" }); // Clear editedData
   };
 
   const handleDeleteTask = async (taskId) => {
     try {
-      await axios.delete(`http://localhost:5000/todo?id=${taskId}`);
+      // Include the task ID in the request body
+      const taskToDelete = { id: taskId };
+
+      // Send the task ID to the backend to delete the task
+      await axios.delete(`http://localhost:5000/todo`, {
+        data: taskToDelete,
+      });
+
+      // Filter out the deleted task from the local tasks state
       const updatedTasks = tasks.filter((task) => task.id !== taskId);
       setTasks(updatedTasks);
     } catch (error) {
@@ -97,20 +117,23 @@ const Home = () => {
 
   const handleUpdateTask = async (taskId, updatedData) => {
     try {
-      // Send the updated data to the backend
-      await axios.put(`http://localhost:5000/todo?id=${taskId}`, updatedData);
+      // Include the task ID in the request body
+      const updatedTaskData = { id: taskId, ...updatedData };
+
+      // Send the updated data to the backend in the request body
+      await axios.put(`http://localhost:5000/todo`, updatedTaskData);
+
       const updatedTasks = tasks.map((task) =>
         task.id === taskId ? { ...task, ...updatedData } : task
       );
       setTasks(updatedTasks);
       setIsEditing(false);
       setEditTaskId(null);
-      setNewTask({ name: "", Description: "", isCompleted: false });
+      setNewTask({ id: null, name: "", Description: "", isCompleted: false });
     } catch (error) {
       console.error("Error updating task:", error);
     }
   };
-  
 
   return (
     <div className="container mt-4">
@@ -180,8 +203,7 @@ const Home = () => {
                   task.isCompleted ? "list-group-item-success" : ""
                 }`}
               >
-               
-               {editTaskId === task.id ? (
+                {editTaskId === task.id ? (
                   <div>
                     <textarea
                       rows="3"
